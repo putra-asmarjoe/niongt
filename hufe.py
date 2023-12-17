@@ -19,5 +19,5 @@ output = query({
 	},
 })
 # Mengekstrak hasil dari respons
-hasil = output.json()
-print(hasil)
+# hasil = output.json()
+print(output)
