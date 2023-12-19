@@ -1,0 +1,10 @@
+requests==2.27.1
+pandas==1.4.0  # Versi ini hanya contoh, sesuaikan dengan kebutuhan Anda
+numpy==1.22.0  # Versi ini hanya contoh, sesuaikan dengan kebutuhan Anda
+faiss-cpu==1.7.1  # Gunakan faiss-gpu jika menggunakan GPU
+python-dotenv==0.20.0
+torch==1.10.0  # Versi ini hanya contoh, sesuaikan dengan versi PyTorch yang Anda butuhkan
+pdfplumber==0.6.0
+streamlit==1.10.0  # Versi ini hanya contoh, sesuaikan dengan versi Streamlit terbaru
+openai==0.18.0  # Versi ini hanya contoh, sesuaikan dengan versi OpenAI terbaru
+sentence-transformers==2.2.0  # Versi ini hanya contoh, sesuaikan dengan versi yang kompatibel dengan kebutuhan Anda
