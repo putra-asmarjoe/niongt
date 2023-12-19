@@ -418,7 +418,7 @@ def main():
       
       container = st.container(border=True) 
       with st.sidebar:
-          sapa_key = st.text_input("SapaData Key", key="chatbot_api_key", type="password",value="sapav05cnanoa122023")   
+          sapa_key = st.text_input("SapaData Key", key="chatbot_api_key", type="password",value="")   
             
           st.subheader("Dokumen Anda")
           pdf_docs = st.file_uploader(
