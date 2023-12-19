@@ -6,6 +6,7 @@ from sentence_transformers import SentenceTransformer
 from langchain.vectorstores import Chroma
 from langchain.document_loaders import DirectoryLoader
 from langchain.llms import OpenAI
+
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage
 from langchain.document_loaders import TextLoader
@@ -20,6 +21,9 @@ from langchain.document_loaders import Docx2txtLoader
 from langchain.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains.question_answering import load_qa_chain
+from langchain.embeddings import OpenAIEmbeddings
+
+
 
 # Use a pipeline as a high-level helper
 from transformers import pipeline
@@ -29,12 +33,15 @@ pipe = pipeline("question-answering", model="deepset/roberta-base-squad2");
 
 app = Flask(__name__)
 # Initialize Langchain models and Chroma
-# llm = OpenAI()
+llm = OpenAI()
 model_name = "gpt-3.5-turbo"
-# chat_model = ChatOpenAI(model_name=model_name)
+chat_model = ChatOpenAI(model_name=model_name)
 chroma = Chroma()
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
+
+# Initialize the embeddings module from LangChain
+openai_embeddings = OpenAIEmbeddings()
 # Function to store vectors in Chroma
 def store_vectors_in_chroma(texts, model, chroma):
     embeddings = model.encode(texts, convert_to_tensor=False)
@@ -74,19 +81,25 @@ def store_in_chroma(model, chroma):
         # documents = text_splitter.split_documents(documents)
         
         
+        documents = loader.load()
+
+        # split it into chunks
+        # text_splitter = CharacterTextSplitter(chunk_size=200, chunk_overlap=0)
+        # docs = text_splitter.split_documents(documents)
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=200, chunk_overlap=0, add_start_index=True
+            separators=["\n\n", "\r\n","\n", " "],
+            chunk_size=200, 
+            chunk_overlap=0, 
+            add_start_index=True
         )
         all_splits = text_splitter.split_documents(documents)
         
         
-        # print('#########data save to chroma', documents)
+        # create the open-source embedding function
         embedding_function = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
-        # chroma.from_documents(file, embedding_function)
-        # documents = text_splitter.split_documents(documents)
-       
-        vectordb = chroma.from_documents(all_splits, embedding_function)
-        print(file)
+        
+        # load it into Chroma
+        chroma.from_documents(all_splits, embedding_function)
     
     
 def num_tokens_from_string(string: str, encoding_name: str) -> int:
@@ -116,10 +129,10 @@ def get_relevant_text(query, model, chroma, top_k=5):
     relevant_texts = [result.page_content for result in results]
     dataret = " ".join(relevant_texts)
     
-    print("*****************Chrome Response from database - relevant text:", dataret)
-    print("==========Total Leng GPT relevant_text:", len(results))
+    # print("*****************Chrome Response from database - relevant text:", dataret)
+    print("==========Total Len relevant_text:", len(results))
     numtoken = num_tokens_from_string(dataret, "cl100k_base")
-    print("==========Total token:", numtoken)
+    print("==========Total get_relevant_text numtoken:", numtoken)
 
     return dataret
 
@@ -162,40 +175,126 @@ directory_loader = DirectoryLoader('data')
 # if __name__ == '__main__':
 #     app.run(debug=True, port=5001)
 
+# idsave = 19023;
+# texttoembed = "bleky friend name is Jero,jero is cat";
+# response = client.embeddings.create(
+#     input=texttoembed,
+#     model="text-embedding-ada-002"
+# )
+# dataret = response.data[0].embedding;
+# print(dataret)
+# numtoken = num_tokens_from_string(texttoembed, "cl100k_base")
+# print("==========Text embed:", texttoembed)
+# print("==========Total token embed:", numtoken)
 
+# query_result = openai_embeddings.embed_query(texttoembed)
+# print("==========Total LC EMbed:", query_result)
+
+# load the document and split it into chunks
+# loader = TextLoader("data/data.txt")
+# documents = loader.load()
+
+# # split it into chunks
+# # text_splitter = CharacterTextSplitter(chunk_size=200, chunk_overlap=0)
+# # docs = text_splitter.split_documents(documents)
+# text_splitter = RecursiveCharacterTextSplitter(
+#     separators=["\n\n", "\r\n","\n", " "],
+#     chunk_size=200, 
+#     chunk_overlap=0, 
+#     add_start_index=True
+# )
+# all_splits = text_splitter.split_documents(documents)
+
+# docstxt = text_splitter.split_text(texttoembed)
+# len(docstxt)
+
+# # create the open-source embedding function
+# embedding_function = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+
+# # load it into Chroma
+# db = Chroma.from_documents(all_splits, embedding_function)
+
+store_in_chroma(model, chroma)
 # Main script
 if __name__ == "__main__":
 
-    
-    store_in_chroma(model, chroma);
     print("Welcome to the AI Assistant!")
     while True:
         user_text = input("Please enter your question (or 'x' to quit): ")
         if user_text.lower() == 'x':
             break
-
+        querysrc = user_text;#"dog name"
+        query_vector = model.encode(querysrc, convert_to_tensor=False).tolist()  # Ensure it's in the correct format
+        docssimiliar = chroma.similarity_search_by_vector(query_vector,5)
+        
+        # print results
+        print("docssimiliar", docssimiliar)
+        
+        relevant_texts = [result.page_content for result in docssimiliar]
+        dataretStr = " ".join(relevant_texts)
+        numtoken = num_tokens_from_string(dataretStr, "cl100k_base")
+        print("==========Total Len docssimiliar:", len(docssimiliar))
+        print("==========Text docssimiliar numtoken:", numtoken)
+        
+        print("==========def relevant_text:")        
         relevant_text = get_relevant_text(user_text, model, chroma)
-        # print("Chroma relevant_text:", relevant_text)
-        combined_text = relevant_text + "\n\n" + user_text
-        messagesStr = HumanMessage(content=combined_text)
-        messages = [messagesStr]
+        
+        
+        
+        output = query({
+                	"inputs": {
+                		"question": querysrc,
+                		"context": dataretStr
+                	},
+                })
+        print("Search by HF", output)
+        output = query({
+                	"inputs": {
+                		"question": querysrc,
+                		"context": relevant_text
+                	},
+                })
+        print("Search by HF2", output)
+        
+        # combined_text = relevant_text + "\n\n" + querysrc
+        # response2 = llm.invoke(combined_text)
+        # print("==========Response from GPT LLM:", response2)
+        
+        # messagesStr = HumanMessage(content=combined_text)
+        # messages = [messagesStr]
+        # response = chat_model.invoke(messages)
+        # print("==========Response from GPT Chat:", response)
+        
+        # Mengekstrak hasil dari respons
+#     store_in_chroma(model, chroma);
+#     print("Welcome to the AI Assistant!")
+#     while True:
+#         user_text = input("Please enter your question (or 'x' to quit): ")
+#         if user_text.lower() == 'x':
+#             break
+
+#         relevant_text = get_relevant_text(user_text, model, chroma)
+#         # print("Chroma relevant_text:", relevant_text)
+#         combined_text = relevant_text + "\n\n" + user_text
+#         messagesStr = HumanMessage(content=combined_text)
+#         messages = [messagesStr]
 
          
         	
-        output = query({
-        	"inputs": {
-        		"question": user_text,
-        		"context": combined_text
-        	},
-        })
-        # Mengekstrak hasil dari respons
-        print(output)
+#         output = query({
+#         	"inputs": {
+#         		"question": user_text,
+#         		"context": combined_text
+#         	},
+#         })
+#         # Mengekstrak hasil dari respons
+#         print(output)
        
-        # print("==========Response GPT relevant_text:", relevant_text)
+#         # print("==========Response GPT relevant_text:", relevant_text)
         
-        # response2 = llm.invoke(messages)
-        # print("==========Response GPT LLMOpenAI:", response2)
+#         # response2 = llm.invoke(messages)
+#         # print("==========Response GPT LLMOpenAI:", response2)
         
-        # response = chat_model.invoke(messages)
-        # print("==========Response GPT ChatGpt3.5:", response)
+#         # response = chat_model.invoke(messages)
+#         # print("==========Response GPT ChatGpt3.5:", response)
         
