@@ -10,5 +10,6 @@ openai
 sentence-transformers
 transformers
 PyPDF2
+pypdf
 langchain
 tiktoken
