@@ -1,10 +1,14 @@
 requests
 pandas
 numpy
-faiss-cpu  # Gunakan faiss-gpu jika menggunakan GPU
+faiss-cpu  # atau faiss-gpu, tergantung pada kebutuhan hardware Anda
 python-dotenv
 torch  # Pilih versi yang sesuai dengan infrastruktur hardware Anda (CPU atau GPU)
 pdfplumber
 streamlit
 openai
 sentence-transformers
+transformers
+PyPDF2
+langchain
+tiktoken
