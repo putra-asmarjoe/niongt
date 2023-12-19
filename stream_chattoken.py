@@ -160,7 +160,7 @@ def query_hf_model(text):
     return response.json()
     
 API_URL = "https://api-inference.huggingface.co/models/deepset/roberta-base-squad2"
-headers={"Authorization": f"Bearer {hf_token}"},
+headers = {"Authorization": "Bearer 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"}
 
 def queryhugefc(payload):
 	response = requests.post(API_URL, headers=headers, json=payload)
@@ -411,24 +411,21 @@ def main():
       
     
       # Judul Aplikasi
-      st.title("💬  SapaData 🧠")
-      
+      st.title("🤖 SapaData 🧠")
     #   st.caption("Where Data Finds Its Voice, Transforming Data into Dialogues")
-      st.caption("""
-      "Transforming Data Voice into Dialogues"
-      """)
+      st.caption("Transforming Data Voice into Dialogues")
      
       
       container = st.container(border=True) 
       with st.sidebar:
-          sapa_key = st.text_input("SapaData Key", key="chatbot_api_key", type="password",value="")   
+          sapa_key = st.text_input("SapaData Key", key="chatbot_api_key", type="password",value="sapav05cnanoa122023")   
             
           st.subheader("Dokumen Anda")
           pdf_docs = st.file_uploader(
                 "Upload your PDFs here and click on 'Process'", accept_multiple_files=True)
           if st.button("Process"):
             
-            #save to session file name
+            #save to
             st.session_state["docname"] = pdf_docs[0].name
             
             with st.spinner("Processing"):
