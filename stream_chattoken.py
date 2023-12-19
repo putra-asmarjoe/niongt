@@ -411,9 +411,12 @@ def main():
       
     
       # Judul Aplikasi
-      st.title("🤖 SapaData 🧠")
+      st.title("💬  SapaData 🧠")
+      
     #   st.caption("Where Data Finds Its Voice, Transforming Data into Dialogues")
-      st.caption("Transforming Data Voice into Dialogues")
+      st.caption("""
+      "Transforming Data Voice into Dialogues"
+      """)
      
       
       container = st.container(border=True) 
