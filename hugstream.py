@@ -37,6 +37,7 @@ from langchain.text_splitter import CharacterTextSplitter
 
 model_id = "sentence-transformers/all-MiniLM-L6-v2"
 hf_token = os.getenv('API_KEY')
+sapa_token = os.getenv('SAPADATA_CHAT_TOKEN')
 
 api_url = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{model_id}"
 headers = {"Authorization": "Bearer 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"}
@@ -296,8 +297,8 @@ def loadfolder_pdf_text():
 def get_text_chunks(text):
     text_splitter = CharacterTextSplitter(
         separator="\n",
-        chunk_size=1000,
-        chunk_overlap=200,
+        chunk_size=500,
+        chunk_overlap=100,
         length_function=len
     )
     chunks = text_splitter.split_text(text)
@@ -337,9 +338,9 @@ def get_conversation_chain_openai2(vectorstore):
     print(conversation_chain)
     return conversation_chain
 
-def get_conversation_chain_hf(vectorstore):
+def get_conversation_chain_mixtrail(vectorstore):
     # llm = ChatOpenAI()
-    llm = HuggingFaceHub(repo_id="google/flan-t5-xxl", model_kwargs={"temperature":0.5, "max_length":512})
+    llm = HuggingFaceHub(repo_id="mistralai/Mixtral-8x7B-Instruct-v0.1", model_kwargs={"temperature":0.5, "max_length":512})
 
     memory = ConversationBufferMemory(
         memory_key='chat_history', return_messages=True)
@@ -351,7 +352,15 @@ def get_conversation_chain_hf(vectorstore):
     print("conversation_chain = " + str(conversation_chain))
     return conversation_chain
     
-
+def router_conversation_chain(model_name, vectorstore):
+    conversation_chain = None;
+    if "GPT-3.5" in model_name:
+        conversation_chain = get_conversation_chain_openai(vectorstore)
+    elif "mixtral" in model_name.lower():
+        conversation_chain = get_conversation_chain_mixtrail(vectorstore)
+    else:
+        raise ValueError(f"Unsupported model name: {model_name}")
+    return conversation_chain;
   
 def handle_userinput(user_question):
     response = st.session_state.conversation({'question': user_question})
@@ -364,91 +373,137 @@ def handle_userinput(user_question):
     print("#END")
     for i, message in enumerate(st.session_state.chat_history):
         if i % 2 == 0:        
-            st.chat_message("user").write("NewUser : %s "% (message.content))
+            st.chat_message("user").write("%s "% (message.content))
         else:            
-            st.chat_message("assistant").write("NewBot : %s "% (message.content))
+            st.chat_message("assistant").write("%s "% (message.content))
 
 # # Main script
 # if __name__ == "__main__":
 def main():  
-    print("APLIKASI START RUN................................................................")
+    # print("APLIKASI START RUN................................................................")
     
-    #READ PDF 
+    # #READ PDF 
     
-    # get pdf text
-    raw_text = loadfolder_pdf_text();     
+    # # get pdf text
+    # raw_text = loadfolder_pdf_text();     
 
-    # get the text chunks
-    text_chunks = get_text_chunks(raw_text)
+    # # get the text chunks
+    # text_chunks = get_text_chunks(raw_text)
 
-    # create vector store
-    vectorstore = get_vectorstore(text_chunks)
+    # # create vector store
+    # vectorstore = get_vectorstore(text_chunks)
 
-    # create conversation chain
-    #get_conversation_chain_openai
-    conversation_chain = get_conversation_chain_openai2(vectorstore) 
+    # # create conversation chain
+    # #get_conversation_chain_openai
+    # conversation_chain = get_conversation_chain_openai2(vectorstore) 
     
-    while True:
-            user_text = input("Please enter your question (or 'x' to quit): ")
-            if user_text.lower() == 'x':
-                break
+    # while True:
+    #         user_text = input("Please enter your question (or 'x' to quit): ")
+    #         if user_text.lower() == 'x':
+    #             break
                 
             
-            memorytext = conversation_chain(user_text);
-            print(memorytext)
-            memorytextchat = memorytext['chat_history']
-            print(memorytextchat)
+    #         memorytext = conversation_chain(user_text);
+    #         print(memorytext)
+    #         memorytextchat = memorytext['chat_history']
+    #         print(memorytextchat)
     #   if "conversation" not in st.session_state:
     #         st.session_state.conversation = None
     #   if "chat_history" not in st.session_state:
     #         st.session_state.chat_history = None
       
     
-    #   # Judul Aplikasi
-    #   st.title("🤖 SapaData 🧠")
-    # #   st.caption("Where Data Finds Its Voice, Transforming Data into Dialogues")
-    #   st.caption("Transforming Data Voice into Dialogues")
+      # Judul Aplikasi
+      st.title("🤖 SapaData 🧠")
+    #   st.caption("Where Data Finds Its Voice, Transforming Data into Dialogues")
+      st.caption("Transforming Data Voice into Dialogues")
      
+      model = st.radio(
+        "",
+            options=["⛰️ Mixtral","✨ GPT-3.5"],
+            index=0,
+            horizontal=True,
+        )
+        
+      st.session_state["model"] = model
       
-    #   container = st.container(border=True)
-    #   with st.sidebar:
-    #       openai_api_key = st.text_input("SapaData Key", key="chatbot_api_key", type="password")          
-    #       "[Hub kami untuk mendapatkan SapaData Key .."
-    #       st.subheader("Your documents")
-    #       pdf_docs = st.file_uploader(
-    #             "Upload your PDFs here and click on 'Process'", accept_multiple_files=True)
-    #       if st.button("Process"):
-    #         with st.spinner("Processing"):
-    #             container.success("Anda telah mengupload file %s , Mulai chat untuk berbicara dengan data and"% (pdf_docs[0].name))
-    #             # get pdf text
-    #             raw_text = get_pdf_text(pdf_docs)
-
-    #             # get the text chunks
-    #             text_chunks = get_text_chunks(raw_text)
-
-    #             # create vector store
-    #             vectorstore = get_vectorstore(text_chunks)
-
-    #             # create conversation chain
-    #             st.session_state.conversation = get_conversation_chain_openai(
-    #                 vectorstore)
-                    
-    #   if "messages" not in st.session_state:
-    #       st.session_state["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
+      if "model" not in st.session_state:
+        st.session_state["model"] = model
+        
+         
       
-    #   for msg in st.session_state.messages:
-    #       st.chat_message(msg["role"]).write(msg["content"])
-      
-    #   # Inisialisasi session_state untuk menyimpan teks
-    #   if 'input_text' not in st.session_state:
-    #       st.session_state['input_text'] = ''
-      
-      
-    #   # # Logika untuk menampilkan teks ketika tombol diklik
-    #   if prompt := st.chat_input():
-    #       st.session_state['input_text'] = prompt
+        
+      container = st.container(border=True)
+      with st.sidebar:
+          sapa_key = st.text_input("SapaData Key", key="chatbot_api_key", type="password", value="")          
+          "[Hub kami untuk mendapatkan SapaData Key .."
+          st.subheader("Your documents")
+          pdf_docs = st.file_uploader(
+                "Upload your PDFs here and click on 'Process'", accept_multiple_files=True)
           
-    #       handle_userinput(prompt) 
+            
+          if st.button("Process"):
+            #save to
+            st.session_state["docname"] = len(pdf_docs)
+            
+            with st.spinner("Processing"):
+                # container.success("Anda telah mengupload file %s , Mulai chat untuk berbicara dengan data and"% (pdf_docs[0].name))
+                # get pdf text
+                raw_text = get_pdf_text(pdf_docs)
+
+                # get the text chunks
+                text_chunks = get_text_chunks(raw_text)
+
+                # create vector store
+                vectorstore = get_vectorstore(text_chunks)
+
+                # create conversation chain
+                st.session_state.conversation = router_conversation_chain(st.session_state["model"], vectorstore)
+                    
+      if "messages" not in st.session_state:
+          st.session_state["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
+      
+      if sapa_key == "":
+        st.session_state["messages"] = [{"role": "assistant", "content": "Sebelum memulai, Masukan SapaData Key Anda Pada Panel Kiri .."}]
+      else:
+        if(sapa_token != sapa_key):
+            st.session_state["messages"] = [{"role": "assistant", "content": "SapaData Key Anda Tidak Valid, Silahkan periksa ulang Key Anda"}]
+        else:            
+            
+            if "docname" not in st.session_state:        
+              st.session_state["messages"] = [{"role": "assistant", "content": "Halo dokumen apa yang perlu kita sapa??"}]
+            else:
+              st.session_state["messages"] = [{"role": "assistant", "content": "Anda telah mengupload %s file, Mulai chat untuk berbicara dengan data anda"% (st.session_state["docname"])}]
+      
+      
+      for msg in st.session_state.messages:
+          st.chat_message(msg["role"]).write(msg["content"])
+      
+      
+    
+      # Inisialisasi session_state untuk menyimpan teks
+      if 'input_text' not in st.session_state:
+          st.session_state['input_text'] = ''
+      
+      
+      # # Logika untuk menampilkan teks ketika tombol diklik
+      if prompt := st.chat_input():
+          st.session_state['input_text'] = prompt
+          if sapa_key == "":
+            st.info("Silahkan Masukan SapaData Key Anda, Belum punya SapaData Key? Hub kami disini .. ", icon="ℹ️")
+          else:
+            if(sapa_token != sapa_key):
+                st.info("SapaData Key Anda Tidak Valid", icon="ℹ️")
+            else:
+                if "docname" not in st.session_state:        
+                    st.session_state["messages"] = [{"role": "assistant", "content": "Silahkan upload dokumen anda terlebih dahulu ??"}]
+                else:
+                    st.session_state['input_text'] = prompt
+                    handle_userinput(prompt)
+      
+      
+                # st.write("You entered:", openai_api_key)  
+                
     
     
         

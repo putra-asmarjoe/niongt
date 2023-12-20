@@ -13,3 +13,4 @@ PyPDF2
 pypdf
 langchain
 tiktoken
+boto3

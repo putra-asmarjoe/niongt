@@ -241,9 +241,11 @@ def show_result_query(user_query):
         
         ttlgpttoken = "";
         gptresponds = "";
-        llm = HuggingFaceHub(repo_id="google/flan-t5-xxl", model_kwargs={"temperature":0.6})    
+        llm = HuggingFaceHub(repo_id="mistralai/Mixtral-8x7B-Instruct-v0.1", model_kwargs={"temperature":0.5, "max_length":512})    
         # response  = llm(most_similar_text2 +", and questions is %s" % user_query)
         response  = llm(most_similar_text3 +", and questions is %s" % user_query)
+        
+        
         print("Search by hfLLM :", response)
         completion = client.chat.completions.create(
           model="gpt-3.5-turbo",
@@ -476,10 +478,14 @@ def main():
             if(sapa_token != sapa_key):
                 st.info("SapaData Key Anda Tidak Valid", icon="ℹ️")
             else:
-                # st.write("You entered:", openai_api_key)  
-                st.session_state['input_text'] = prompt
-                # handle_userinput(prompt)
-                show_result_query(prompt)
+                
+                if "docname" not in st.session_state:        
+                    st.session_state["messages"] = [{"role": "assistant", "content": "Silahkan upload dokumen anda terlebih dahulu ??"}]
+                else:
+                    # st.write("You entered:", openai_api_key)  
+                    st.session_state['input_text'] = prompt
+                    # handle_userinput(prompt)
+                    show_result_query(prompt)
     
     
         
